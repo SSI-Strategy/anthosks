@@ -1,0 +1,62 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# Environment and Secrets
+.env
+.env.local
+*.key
+*.pem
+credentials.json
+
+# Data and Storage
+data/
+!data/.gitkeep
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Application Cache
+cache/
+tmp/
+temp/
+
+# Output Files
+output/
+*.xlsx
+*.csv
+!references/*.xlsx
+
+# Node.js (Frontend)
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/.env
+
+references/
