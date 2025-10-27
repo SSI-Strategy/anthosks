@@ -146,22 +146,33 @@ class AzureADAuth:
                     detail="Invalid token signature key"
                 )
 
-            # Verify and decode token
+            # Verify and decode token (skip issuer verification, we'll do it manually)
             payload = jwt.decode(
                 token,
                 signing_key,
                 algorithms=["RS256"],
                 audience=self.audience,
-                issuer=f"{self.authority}/v2.0",
                 options={
                     "verify_signature": True,
                     "verify_exp": True,
                     "verify_nbf": True,
                     "verify_iat": True,
                     "verify_aud": True,
-                    "verify_iss": True,
+                    "verify_iss": False,  # We verify issuer manually below
                 }
             )
+
+            # Manually verify issuer - accept both v1.0 and v2.0 tokens
+            token_issuer = payload.get("iss", "")
+            valid_issuers = [
+                f"https://login.microsoftonline.com/{self.tenant_id}/v2.0",  # v2.0 tokens
+                f"https://sts.windows.net/{self.tenant_id}/",  # v1.0 tokens
+            ]
+            if token_issuer not in valid_issuers:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail=f"Invalid token issuer: {token_issuer}"
+                )
 
             # Extract user info
             user = {
