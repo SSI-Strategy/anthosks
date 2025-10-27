@@ -35,15 +35,19 @@ jobs:
         VITE_API_SCOPES: 'api://8cd494f0-2240-4fb2-979c-d79b392a9ed8/access_as_user'
         VITE_API_URL: 'https://app-anthosks-api-se-01-p.azurewebsites.net'
 
-    - name: Create deployment package
+    - name: Azure Login
+      uses: azure/login@v2
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Create deployment package and deploy
       working-directory: ./frontend
       run: |
         cd dist
         zip -r ../deploy.zip .
-
-    - name: Deploy to Azure Web App
-      uses: azure/webapps-deploy@v3
-      with:
-        app-name: 'app-anthosks-ui-se-01-p'
-        publish-profile: ${{ secrets.AZURE_FRONTEND_PUBLISH_PROFILE }}
-        package: ./frontend/deploy.zip
+        cd ..
+        az webapp deploy \
+          --resource-group rg-sandbox-se-01-p \
+          --name app-anthosks-ui-se-01-p \
+          --src-path deploy.zip \
+          --type zip

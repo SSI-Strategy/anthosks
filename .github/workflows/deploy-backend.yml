@@ -32,13 +32,16 @@ jobs:
         pip install pytest
         pytest tests/ || echo "No tests found"
 
-    - name: Create deployment package
-      run: |
-        zip -r deploy.zip . -x ".git/*" ".github/*" "*.pyc" "__pycache__/*" "tests/*" ".env" "venv/*" "*.md"
-
-    - name: Deploy to Azure Web App
-      uses: azure/webapps-deploy@v3
+    - name: Azure Login
+      uses: azure/login@v2
       with:
-        app-name: 'app-anthosks-api-se-01-p'
-        publish-profile: ${{ secrets.AZURE_BACKEND_PUBLISH_PROFILE }}
-        package: ./deploy.zip
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Create deployment package and deploy
+      run: |
+        zip -r deploy.zip . -x ".git/*" ".github/*" "*.pyc" "__pycache__/*" "tests/*" ".env" "venv/*" "*.md" "frontend/*" "*.zip"
+        az webapp deploy \
+          --resource-group rg-sandbox-se-01-p \
+          --name app-anthosks-api-se-01-p \
+          --src-path deploy.zip \
+          --type zip
