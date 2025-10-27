@@ -1,5 +1,5 @@
 .upload-container {
-  max-width: 900px;
+  max-width: 1100px;
   margin: 0 auto;
 }
 
@@ -21,6 +21,7 @@
 .upload-section:hover {
   border-color: var(--primary-color);
   box-shadow: var(--shadow-lg);
+  transform: scale(1.01);
 }
 
 .upload-section input[type="file"] {
@@ -108,6 +109,10 @@
   100% { transform: rotate(360deg); }
 }
 
+.spinner-icon {
+  animation: spin 1s linear infinite;
+}
+
 .error-message {
   padding: 1.5rem;
   background-color: #fef2f2;
@@ -126,6 +131,18 @@
   border-radius: 12px;
   margin-top: 2rem;
   box-shadow: var(--shadow-md);
+  animation: slideDown 0.4s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .success-message h3 {

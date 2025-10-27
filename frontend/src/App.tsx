@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ClipboardList } from 'lucide-react';
 import './App.css';
 import Upload from './components/Upload';
 import Review from './components/Review';
@@ -14,7 +15,7 @@ function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>📋 MOV Report Extraction & Review</h1>
+        <h1><ClipboardList size={32} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '12px' }} /> MOV Report Extraction & Review</h1>
         <LoginButton />
       </header>
 

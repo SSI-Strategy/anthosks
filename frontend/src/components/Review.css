@@ -84,6 +84,12 @@
   border-radius: 12px;
   box-shadow: var(--shadow-md);
   border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
+}
+
+.report-section:hover {
+  transform: scale(1.005);
+  box-shadow: var(--shadow-lg);
 }
 
 .report-section h3 {
@@ -165,6 +171,18 @@
   max-height: 600px;
   overflow-y: auto;
   padding-right: 0.5rem;
+  position: relative;
+}
+
+.questions-list::after {
+  content: '';
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: linear-gradient(to top, var(--bg-primary), transparent);
+  pointer-events: none;
 }
 
 .question-item {
@@ -248,12 +266,15 @@
 
 .question-text {
   flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .answer-badge {
   padding: 0.375rem 0.875rem;
   border-radius: 16px;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 600;
   min-width: 50px;
   text-align: center;

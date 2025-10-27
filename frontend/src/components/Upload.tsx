@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { FileText, Upload as UploadIcon, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { uploadReport } from '../services/api';
 import './Upload.css';
 
@@ -47,7 +48,8 @@ function Upload() {
 
         {file && (
           <div className="file-info">
-            📄 File: {file.name} ({(file.size / 1024).toFixed(1)} KB)
+            <FileText size={18} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '8px' }} />
+            File: {file.name} ({(file.size / 1024).toFixed(1)} KB)
           </div>
         )}
 
@@ -57,7 +59,17 @@ function Upload() {
             onClick={handleUpload}
             disabled={uploading}
           >
-            {uploading ? '⏳ Extracting...' : '🚀 Extract Data'}
+            {uploading ? (
+              <>
+                <Loader2 size={18} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '8px' }} className="spinner-icon" />
+                Extracting...
+              </>
+            ) : (
+              <>
+                <UploadIcon size={18} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '8px' }} />
+                Extract Data
+              </>
+            )}
           </button>
         )}
       </div>
@@ -71,13 +83,17 @@ function Upload() {
 
       {error && (
         <div className="error-message">
-          ❌ {error}
+          <XCircle size={18} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '8px' }} />
+          {error}
         </div>
       )}
 
       {result && (
         <div className="success-message">
-          <h3>✅ Extraction Complete!</h3>
+          <h3>
+            <CheckCircle size={24} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '8px' }} />
+            Extraction Complete!
+          </h3>
           <div className="result-details">
             <p><strong>Report ID:</strong> {result.report_id}</p>
             <p><strong>Questions:</strong> {result.questions}</p>

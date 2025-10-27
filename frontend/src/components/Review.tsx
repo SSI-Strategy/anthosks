@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { AlertTriangle, CheckCircle } from 'lucide-react';
 import { listReports, getReport } from '../services/api';
 import type { ReportDetail } from '../types';
 import './Review.css';
@@ -153,7 +154,7 @@ function Review() {
                         <details key={q.question_number} className={`question-item ${getSentimentClass(q.sentiment)}`}>
                           <summary>
                             <span className="question-number">Q{q.question_number}</span>
-                            <span className="question-text">{q.question_text.substring(0, 60)}...</span>
+                            <span className="question-text">{q.question_text}</span>
                             <span className={`answer-badge ${getSentimentClass(q.sentiment)}`}>{q.answer}</span>
                           </summary>
                           <div className="question-details">
@@ -162,7 +163,10 @@ function Review() {
                             )}
                             {q.key_finding && (
                               <div className="key-finding">
-                                <strong>⚠️ Key Finding:</strong> {q.key_finding}
+                                <strong>
+                                  <AlertTriangle size={16} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '6px' }} />
+                                  Key Finding:
+                                </strong> {q.key_finding}
                               </div>
                             )}
                           </div>
@@ -181,7 +185,10 @@ function Review() {
 
                     {selectedReport.key_concerns.length > 0 && (
                       <div className="concerns">
-                        <h4>⚠️ Concerns:</h4>
+                        <h4>
+                          <AlertTriangle size={18} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '6px' }} />
+                          Concerns:
+                        </h4>
                         <ul>
                           {selectedReport.key_concerns.map((concern, idx) => (
                             <li key={idx}>{concern}</li>
@@ -192,7 +199,10 @@ function Review() {
 
                     {selectedReport.key_strengths.length > 0 && (
                       <div className="strengths">
-                        <h4>✅ Strengths:</h4>
+                        <h4>
+                          <CheckCircle size={18} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '6px' }} />
+                          Strengths:
+                        </h4>
                         <ul>
                           {selectedReport.key_strengths.map((strength, idx) => (
                             <li key={idx}>{strength}</li>

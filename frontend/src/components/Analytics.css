@@ -14,7 +14,7 @@
 .analytics-header h2 {
   margin: 0;
   font-size: 2rem;
-  color: #1a1a1a;
+  color: var(--text-primary);
 }
 
 .analytics-controls {
@@ -30,12 +30,12 @@
 
 .filter-group label {
   font-weight: 500;
-  color: #555;
+  color: var(--text-secondary);
 }
 
 .filter-group select {
   padding: 0.5rem 1rem;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   background: white;
   cursor: pointer;
@@ -43,14 +43,14 @@
 }
 
 .filter-group select:hover {
-  border-color: #4CAF50;
+  border-color: var(--primary-color);
 }
 
 /* Tabs */
 .analytics-tabs {
   display: flex;
   gap: 0.5rem;
-  border-bottom: 2px solid #e0e0e0;
+  border-bottom: 2px solid var(--border-color);
   margin-bottom: 2rem;
 }
 
@@ -62,18 +62,18 @@
   cursor: pointer;
   font-size: 1rem;
   font-weight: 500;
-  color: #666;
+  color: var(--text-secondary);
   transition: all 0.2s;
 }
 
 .analytics-tabs .tab:hover {
-  color: #4CAF50;
-  background: #f5f5f5;
+  color: var(--primary-color);
+  background: var(--bg-tertiary);
 }
 
 .analytics-tabs .tab.active {
-  color: #4CAF50;
-  border-bottom-color: #4CAF50;
+  color: var(--primary-color);
+  border-bottom-color: var(--primary-color);
 }
 
 /* Loading/Error States */
@@ -81,10 +81,11 @@
   text-align: center;
   padding: 3rem;
   font-size: 1.1rem;
+  color: var(--text-secondary);
 }
 
 .error {
-  color: #d32f2f;
+  color: var(--error-color);
 }
 
 /* KPI Grid */
@@ -93,47 +94,76 @@
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1rem;
   margin-bottom: 2rem;
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .kpi-card {
-  background: white;
-  border: 1px solid #e0e0e0;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 1.5rem;
   text-align: center;
   transition: transform 0.2s, box-shadow 0.2s;
+  animation: scaleIn 0.4s ease-out backwards;
 }
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.kpi-card:nth-child(1) { animation-delay: 0.05s; }
+.kpi-card:nth-child(2) { animation-delay: 0.1s; }
+.kpi-card:nth-child(3) { animation-delay: 0.15s; }
+.kpi-card:nth-child(4) { animation-delay: 0.2s; }
+.kpi-card:nth-child(5) { animation-delay: 0.25s; }
+.kpi-card:nth-child(6) { animation-delay: 0.3s; }
 
 .kpi-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: var(--shadow-md);
 }
 
 .kpi-card.highlight {
-  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
-  border-color: #4CAF50;
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  border-color: var(--success-color);
 }
 
 .kpi-card.alert {
-  background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
-  border-color: #f44336;
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border-color: var(--error-color);
 }
 
 .kpi-card.warning {
-  background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
-  border-color: #ff9800;
+  background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%);
+  border-color: var(--warning-color);
 }
 
 .kpi-value {
   font-size: 2.5rem;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
 }
 
 .kpi-label {
   font-size: 0.9rem;
-  color: #666;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -141,11 +171,23 @@
 /* Charts Section */
 .charts-section {
   margin-top: 2rem;
+  animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .chart-card {
-  background: white;
-  border: 1px solid #e0e0e0;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 2rem;
 }
@@ -153,7 +195,7 @@
 .chart-card h3 {
   margin: 0 0 1.5rem 0;
   font-size: 1.3rem;
-  color: #1a1a1a;
+  color: var(--text-primary);
 }
 
 /* Answer Distribution */
@@ -172,13 +214,13 @@
 .bar-label {
   min-width: 60px;
   font-weight: 500;
-  color: #555;
+  color: var(--text-secondary);
 }
 
 .bar-container {
   flex: 1;
   height: 40px;
-  background: #f5f5f5;
+  background: var(--bg-tertiary);
   border-radius: 4px;
   overflow: hidden;
 }
@@ -195,19 +237,19 @@
 }
 
 .yes-bar {
-  background: linear-gradient(90deg, #4CAF50, #66BB6A);
+  background: linear-gradient(90deg, var(--success-color), #10b981);
 }
 
 .no-bar {
-  background: linear-gradient(90deg, #f44336, #ef5350);
+  background: linear-gradient(90deg, var(--error-color), #ef4444);
 }
 
 .na-bar {
-  background: linear-gradient(90deg, #ff9800, #ffa726);
+  background: linear-gradient(90deg, var(--warning-color), #f59e0b);
 }
 
 .nr-bar {
-  background: linear-gradient(90deg, #9e9e9e, #bdbdbd);
+  background: linear-gradient(90deg, var(--secondary-color), #94a3b8);
 }
 
 /* Section Header */
@@ -218,21 +260,22 @@
 .section-header h3 {
   margin: 0 0 0.5rem 0;
   font-size: 1.5rem;
-  color: #1a1a1a;
+  color: var(--text-primary);
 }
 
 .section-header p {
   margin: 0;
-  color: #666;
+  color: var(--text-secondary);
   font-size: 0.95rem;
 }
 
 /* Tables */
 .questions-table, .sites-table {
-  background: white;
-  border: 1px solid #e0e0e0;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   overflow: hidden;
+  animation: fadeInUp 0.5s ease-out;
 }
 
 table {
@@ -241,15 +284,15 @@ table {
 }
 
 thead {
-  background: #f5f5f5;
+  background: var(--bg-tertiary);
 }
 
 th {
   padding: 1rem;
   text-align: left;
   font-weight: 600;
-  color: #333;
-  border-bottom: 2px solid #e0e0e0;
+  color: var(--text-primary);
+  border-bottom: 2px solid var(--border-color);
   font-size: 0.9rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -257,13 +300,13 @@ th {
 
 td {
   padding: 1rem;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--border-color);
   font-size: 0.95rem;
-  color: #333;
+  color: var(--text-primary);
 }
 
 tbody tr:hover {
-  background: #fafafa;
+  background: var(--bg-tertiary);
 }
 
 tbody tr:last-child td {
@@ -306,25 +349,34 @@ tbody tr:last-child td {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1.5rem;
+  animation: fadeIn 0.5s ease-out;
 }
 
 .country-card {
-  background: white;
-  border: 1px solid #e0e0e0;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 1.5rem;
   transition: transform 0.2s, box-shadow 0.2s;
+  animation: fadeInUp 0.5s ease-out backwards;
 }
+
+.country-card:nth-child(1) { animation-delay: 0.05s; }
+.country-card:nth-child(2) { animation-delay: 0.1s; }
+.country-card:nth-child(3) { animation-delay: 0.15s; }
+.country-card:nth-child(4) { animation-delay: 0.2s; }
+.country-card:nth-child(5) { animation-delay: 0.25s; }
+.country-card:nth-child(6) { animation-delay: 0.3s; }
 
 .country-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: var(--shadow-md);
 }
 
 .country-card h4 {
   margin: 0 0 1rem 0;
   font-size: 1.3rem;
-  color: #1a1a1a;
+  color: var(--text-primary);
 }
 
 .country-stats {
@@ -332,7 +384,7 @@ tbody tr:last-child td {
   justify-content: space-around;
   margin-bottom: 1.5rem;
   padding-bottom: 1.5rem;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .stat {
@@ -345,24 +397,24 @@ tbody tr:last-child td {
 .stat-value {
   font-size: 1.8rem;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--text-primary);
 }
 
 .stat-value.low {
-  color: #c62828;
+  color: var(--error-color);
 }
 
 .stat-value.medium {
-  color: #f57c00;
+  color: var(--warning-color);
 }
 
 .stat-value.high {
-  color: #2e7d32;
+  color: var(--success-color);
 }
 
 .stat-label {
   font-size: 0.8rem;
-  color: #666;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -380,12 +432,12 @@ tbody tr:last-child td {
 }
 
 .dist-label {
-  color: #666;
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
 .dist-value {
-  color: #1a1a1a;
+  color: var(--text-primary);
   font-weight: 600;
 }
 

@@ -4,6 +4,7 @@
  */
 
 import { useMsal } from '@azure/msal-react';
+import { ClipboardList } from 'lucide-react';
 import { loginRequest } from '../authConfig';
 import './Login.css';
 
@@ -22,7 +23,10 @@ export function Login() {
     <div className="login-container">
       <div className="login-card">
         <div className="login-header">
-          <h1>📋 MOV Report Extraction & Review</h1>
+          <h1>
+            <ClipboardList size={36} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '12px' }} />
+            MOV Report Extraction & Review
+          </h1>
           <p className="login-subtitle">Compliance Document Analysis System</p>
         </div>
 
