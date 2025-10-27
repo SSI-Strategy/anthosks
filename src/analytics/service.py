@@ -32,10 +32,10 @@ class AnalyticsService:
         Returns:
             List of MOVReport objects
         """
-        all_reports = self.db.list_reports(limit=10000)  # Get all reports
+        all_reports_with_ids = self.db.list_reports(limit=10000)  # Get all reports (returns tuples of (id, report))
 
         filtered = []
-        for report in all_reports:
+        for report_id, report in all_reports_with_ids:
             # Date filtering
             if date_from or date_to:
                 if not report.visit_start_date:
