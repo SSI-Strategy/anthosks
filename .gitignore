@@ -38,6 +38,10 @@ data/
 *.log
 logs/
 
+# Deployment artifacts
+*.zip
+!.github/**/*.zip
+
 # Jupyter
 .ipynb_checkpoints/
 *.ipynb

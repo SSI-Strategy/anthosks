@@ -13,7 +13,6 @@ import logging
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from src.config import config
-from src.database.sqlite_db import SQLiteDatabase
 from src.database.postgres_db import PostgreSQLDatabase
 from src.extraction.pdf_parser import PDFParser
 from src.extraction.docx_parser import DOCXParser
@@ -43,13 +42,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize database (use PostgreSQL if DATABASE_URL is set, otherwise SQLite)
-if config.DATABASE_URL:
-    logger.info(f"Using PostgreSQL database")
-    db = PostgreSQLDatabase(config.DATABASE_URL)
-else:
-    logger.info(f"Using SQLite database at {config.DATABASE_PATH}")
-    db = SQLiteDatabase(config.DATABASE_PATH)
+# Initialize database (PostgreSQL required)
+if not config.DATABASE_URL:
+    raise RuntimeError("DATABASE_URL environment variable is required")
+
+logger.info(f"Using PostgreSQL database")
+db = PostgreSQLDatabase(config.DATABASE_URL)
 
 # Initialize analytics service
 analytics = AnalyticsService(db)
@@ -120,13 +118,13 @@ async def upload_report(file: UploadFile = File(...), user: dict = Depends(get_c
 async def list_reports(limit: int = 100, offset: int = 0, user: dict = Depends(get_current_user)):
     """List all reports with pagination."""
     try:
-        reports = db.list_reports(limit=limit, offset=offset)
+        reports_with_ids = db.list_reports(limit=limit, offset=offset)
 
         # Convert to dict format for JSON response
         reports_data = []
-        for report in reports:
+        for report_id, report in reports_with_ids:
             reports_data.append({
-                "id": f"{report.site_info.site_number}_{report.visit_start_date}",
+                "id": report_id,  # Use database ID directly
                 "site_number": report.site_info.site_number,
                 "country": report.site_info.country,
                 "institution": report.site_info.institution,

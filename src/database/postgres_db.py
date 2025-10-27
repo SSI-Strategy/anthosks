@@ -104,8 +104,8 @@ class PostgreSQLDatabase(DatabaseProvider):
         limit: int = 100,
         offset: int = 0,
         filter_dict: Optional[dict] = None
-    ) -> List[MOVReport]:
-        """List reports with pagination."""
+    ) -> List[tuple[str, MOVReport]]:
+        """List reports with pagination. Returns list of (id, report) tuples."""
         session = self.Session()
         try:
             query = session.query(ReportRecord)
@@ -119,7 +119,7 @@ class PostgreSQLDatabase(DatabaseProvider):
             records = query.order_by(ReportRecord.extraction_timestamp.desc()) \
                            .limit(limit).offset(offset).all()
 
-            return [MOVReport.model_validate_json(r.json_data) for r in records]
+            return [(r.id, MOVReport.model_validate_json(r.json_data)) for r in records]
         finally:
             session.close()
 
