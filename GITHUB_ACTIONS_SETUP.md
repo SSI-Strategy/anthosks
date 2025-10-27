@@ -22,16 +22,35 @@ Both workflows use Azure CLI for deployment, which requires a service principal 
 - Service principal creation (requires Azure AD admin permissions)
 - GitHub secret configuration with service principal credentials
 
-## Step 1: Create Azure Service Principal
+## Step 1: Configure Service Principal Credentials
 
-You need Azure AD admin permissions to create a service principal. Run this command:
+✅ **Service Principal Already Exists!**
+- Name: `github-actions-anthosks`
+- App ID: `4801c432-e001-4060-83a3-f8dfb0d73af0`
+
+### Quick Setup (Automated Script)
+
+Run the automated setup script:
 
 ```bash
-az ad sp create-for-rbac \
-  --name "github-actions-anthosks" \
-  --role contributor \
-  --scopes /subscriptions/b56571ee-60cd-4e56-a5df-d9d38ee5218d/resourceGroups/rg-sandbox-se-01-p \
-  --sdk-auth
+cd /Users/johanstromquist/Dropbox/Coding/AnthosKS
+./scripts/setup_github_secret.sh
+```
+
+This script will:
+1. Verify the service principal exists
+2. Reset credentials to get a new client secret
+3. Check/assign Contributor role if needed
+4. Automatically configure the GitHub secret
+
+**Note:** This requires Azure AD admin permissions to reset credentials.
+
+### Manual Setup (If You Don't Have Admin Access)
+
+Ask your Azure administrator to run this command:
+
+```bash
+az ad sp credential reset --id 4801c432-e001-4060-83a3-f8dfb0d73af0
 ```
 
 This will output JSON credentials like:
