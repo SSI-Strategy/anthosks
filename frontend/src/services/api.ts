@@ -128,8 +128,8 @@ export const uploadReport = async (file: File): Promise<UploadResponse> => {
   const formData = new FormData();
   formData.append('file', file);
 
-  const response = await axios.post<UploadResponse>(
-    `${API_BASE_URL}/reports/upload`,
+  const response = await api.post<UploadResponse>(
+    '/reports/upload',
     formData,
     {
       headers: {
