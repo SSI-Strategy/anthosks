@@ -8,6 +8,7 @@ function Review() {
   const [reports, setReports] = useState<any[]>([]);
   const [selectedReport, setSelectedReport] = useState<ReportDetail | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingReports, setLoadingReports] = useState(true);
   const [filter, setFilter] = useState<string>('all');
 
   useEffect(() => {
@@ -15,11 +16,14 @@ function Review() {
   }, []);
 
   const loadReports = async () => {
+    setLoadingReports(true);
     try {
       const data = await listReports();
       setReports(data);
     } catch (err) {
       console.error('Failed to load reports:', err);
+    } finally {
+      setLoadingReports(false);
     }
   };
 
@@ -69,7 +73,9 @@ function Review() {
     <div className="review-container">
       <h2>Review Extracted Data</h2>
 
-      {reports.length === 0 ? (
+      {loadingReports ? (
+        <div className="loading">Loading reports...</div>
+      ) : reports.length === 0 ? (
         <div className="info-message">
           No reports to review. Upload a report in the Upload tab.
         </div>
