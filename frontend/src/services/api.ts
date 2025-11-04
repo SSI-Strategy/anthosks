@@ -317,7 +317,8 @@ export const isBackendWarm = async (): Promise<boolean> => {
   try {
     const status = await warmupBackend();
     return status.status === 'warm';
-  } catch (error) {
+  } catch (err) {
+    const error = err as Error;
     console.error('Warmup check failed:', error);
     return false;
   }

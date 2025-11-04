@@ -8,6 +8,7 @@ from typing import List, Optional
 from datetime import datetime, timedelta
 import sys
 import logging
+import threading
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -45,27 +46,35 @@ app.add_middleware(
 # Database instances (lazy initialization)
 _db = None
 _analytics = None
+_db_lock = threading.Lock()
+_analytics_lock = threading.Lock()
 
 
 def get_db() -> PostgreSQLDatabase:
-    """Get database instance with lazy initialization."""
+    """Get database instance with lazy initialization (thread-safe)."""
     global _db
     if _db is None:
-        if not config.DATABASE_URL:
-            raise RuntimeError("DATABASE_URL environment variable is required")
-        logger.info("Initializing PostgreSQL database connection...")
-        _db = PostgreSQLDatabase(config.DATABASE_URL)
-        logger.info("Database connection initialized")
+        with _db_lock:
+            # Double-check pattern to prevent race conditions
+            if _db is None:
+                if not config.DATABASE_URL:
+                    raise RuntimeError("DATABASE_URL environment variable is required")
+                logger.info("Initializing PostgreSQL database connection...")
+                _db = PostgreSQLDatabase(config.DATABASE_URL)
+                logger.info("Database connection initialized")
     return _db
 
 
 def get_analytics() -> AnalyticsService:
-    """Get analytics service instance with lazy initialization."""
+    """Get analytics service instance with lazy initialization (thread-safe)."""
     global _analytics
     if _analytics is None:
-        logger.info("Initializing analytics service...")
-        _analytics = AnalyticsService(get_db())
-        logger.info("Analytics service initialized")
+        with _analytics_lock:
+            # Double-check pattern to prevent race conditions
+            if _analytics is None:
+                logger.info("Initializing analytics service...")
+                _analytics = AnalyticsService(get_db())
+                logger.info("Analytics service initialized")
     return _analytics
 
 
@@ -105,11 +114,15 @@ async def warmup():
         }
     except Exception as e:
         logger.error(f"Warmup failed: {e}", exc_info=True)
-        return {
-            "status": "warming",
-            "message": f"Warmup in progress: {str(e)}",
-            "database": "connecting"
-        }
+        # Return 503 Service Unavailable for warmup failures
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "status": "warming",
+                "message": f"Warmup in progress: {str(e)}",
+                "database": "connecting"
+            }
+        )
 
 
 @app.post("/api/reports/upload")

@@ -8,6 +8,7 @@ from datetime import datetime
 
 from .base import DatabaseProvider
 from ..models import MOVReport
+from ..config import config
 
 Base = declarative_base()
 
@@ -49,13 +50,14 @@ class PostgreSQLDatabase(DatabaseProvider):
         # pool_pre_ping ensures connections are alive before using them
         # pool_size controls the number of persistent connections
         # max_overflow allows additional connections when needed
+        # Settings are configurable via environment variables
         self.engine = create_engine(
             connection_url,
-            pool_pre_ping=True,  # Verify connections before using
-            pool_size=5,          # Keep 5 connections in pool
-            max_overflow=10,      # Allow up to 15 total connections
-            pool_recycle=3600,    # Recycle connections after 1 hour
-            echo=False            # Set to True for SQL debugging
+            pool_pre_ping=True,              # Verify connections before using
+            pool_size=config.DB_POOL_SIZE,   # Configurable via DB_POOL_SIZE (default: 5)
+            max_overflow=config.DB_MAX_OVERFLOW,  # Configurable via DB_MAX_OVERFLOW (default: 10)
+            pool_recycle=config.DB_POOL_RECYCLE,  # Configurable via DB_POOL_RECYCLE (default: 3600s)
+            echo=False                       # Set to True for SQL debugging
         )
 
         # Create schema if it doesn't exist

@@ -39,6 +39,20 @@ class Config(BaseSettings):
         description="PostgreSQL connection string (postgresql://user:password@host:port/database)"
     )
 
+    # Database Connection Pool Settings
+    DB_POOL_SIZE: int = Field(
+        default=5,
+        description="Number of persistent database connections in the pool"
+    )
+    DB_MAX_OVERFLOW: int = Field(
+        default=10,
+        description="Maximum number of additional connections allowed beyond pool_size"
+    )
+    DB_POOL_RECYCLE: int = Field(
+        default=3600,
+        description="Recycle connections after this many seconds (default 1 hour)"
+    )
+
     # Application Settings
     LOG_LEVEL: str = Field(default="INFO")
     ENABLE_CACHE: bool = Field(default=True)
