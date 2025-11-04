@@ -50,6 +50,9 @@ class Config(BaseSettings):
     LLM_MAX_TOKENS: int = Field(default=16000)  # Increased for full report extraction
     CONFIDENCE_THRESHOLD: float = Field(default=0.7, ge=0.0, le=1.0)
 
+    # Analytics Parameters
+    ANALYTICS_QUERY_LIMIT: int = Field(default=10000, description="Maximum number of reports to query for analytics")
+
     # Azure AD / EntraID Authentication
     AZURE_AD_ENABLED: bool = Field(default=True, description="Enable Azure AD authentication")
     AZURE_AD_TENANT_ID: Optional[str] = Field(default=None, description="Azure AD Tenant ID")

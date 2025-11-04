@@ -8,6 +8,8 @@ from typing import List, Optional
 from datetime import datetime, timedelta
 import sys
 import logging
+import secrets
+import os
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -75,10 +77,19 @@ async def upload_report(file: UploadFile = File(...), user: dict = Depends(get_c
     if file_ext not in ['.pdf', '.docx']:
         raise HTTPException(status_code=400, detail="Only PDF and DOCX files are accepted")
 
+    # Read file content and validate size (max 50MB)
+    MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
+    content = await file.read()
+    if len(content) > MAX_FILE_SIZE:
+        raise HTTPException(status_code=400, detail="File size exceeds 50MB limit")
+
+    # Sanitize filename to prevent path traversal attacks
+    original_name = os.path.basename(file.filename)  # Remove directory components
+    safe_filename = f"{secrets.token_hex(8)}_{original_name}"
+    temp_path = Path(config.INPUT_PATH) / safe_filename
+
     try:
         # Save uploaded file
-        temp_path = Path(config.INPUT_PATH) / file.filename
-        content = await file.read()
         temp_path.write_bytes(content)
         logger.info(f"Saved file to: {temp_path}")
 
@@ -94,7 +105,7 @@ async def upload_report(file: UploadFile = File(...), user: dict = Depends(get_c
 
         # LLM extraction (chunked parallel approach)
         extractor = ChunkedExtractor()
-        report = extractor.extract_report_chunked(document_text, file.filename)
+        report = extractor.extract_report_chunked(document_text, original_name)
         logger.info(f"Extracted report with {len(report.question_responses)} questions")
 
         # Save to database
@@ -109,9 +120,19 @@ async def upload_report(file: UploadFile = File(...), user: dict = Depends(get_c
             "quality": report.overall_site_quality
         }
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Upload failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Failed to process report. Please contact support.")
+    finally:
+        # Clean up temporary file
+        if temp_path.exists():
+            try:
+                temp_path.unlink()
+                logger.info(f"Cleaned up temporary file: {temp_path}")
+            except Exception as cleanup_error:
+                logger.error(f"Failed to cleanup file {temp_path}: {cleanup_error}")
 
 
 @app.get("/api/reports")
@@ -140,7 +161,7 @@ async def list_reports(limit: int = 100, offset: int = 0, user: dict = Depends(g
 
     except Exception as e:
         logger.error(f"List reports failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Failed to retrieve reports. Please contact support.")
 
 
 @app.get("/api/reports/{report_id}")
@@ -207,7 +228,7 @@ async def get_report(report_id: str, user: dict = Depends(get_current_user)):
         raise
     except Exception as e:
         logger.error(f"Get report failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Failed to retrieve report. Please contact support.")
 
 
 @app.delete("/api/reports/{report_id}")
@@ -226,7 +247,7 @@ async def delete_report(report_id: str, user: dict = Depends(get_current_user)):
         raise
     except Exception as e:
         logger.error(f"Delete report failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Failed to delete report. Please contact support.")
 
 
 # ===== ANALYTICS ENDPOINTS =====
@@ -260,7 +281,7 @@ async def get_kpis(
 
     except Exception as e:
         logger.error(f"KPI calculation failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Failed to calculate KPIs. Please contact support.")
 
 
 @app.get("/api/analytics/compliance/trends")
@@ -293,7 +314,7 @@ async def get_compliance_trends(
 
     except Exception as e:
         logger.error(f"Compliance trends failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Failed to calculate compliance trends. Please contact support.")
 
 
 @app.get("/api/analytics/compliance/questions")
@@ -324,7 +345,7 @@ async def get_question_statistics(
 
     except Exception as e:
         logger.error(f"Question statistics failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Failed to calculate question statistics. Please contact support.")
 
 
 @app.get("/api/analytics/sites/leaderboard")
@@ -356,7 +377,7 @@ async def get_site_leaderboard(
 
     except Exception as e:
         logger.error(f"Site leaderboard failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Failed to calculate site leaderboard. Please contact support.")
 
 
 @app.get("/api/analytics/geographic")
@@ -384,11 +405,9 @@ async def get_geographic_summary(
 
     except Exception as e:
         logger.error(f"Geographic summary failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Failed to calculate geographic summary. Please contact support.")
 
 
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
-# Trigger deployment
-# Trigger deployment

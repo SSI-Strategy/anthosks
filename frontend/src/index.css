@@ -136,3 +136,16 @@ a:focus-visible {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-secondary);
 }
+
+/* Utility Classes */
+.icon-inline {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+
+.icon-inline-sm {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 6px;
+}

@@ -24,7 +24,7 @@ export function Login() {
       <div className="login-card">
         <div className="login-header">
           <h1>
-            <ClipboardList size={36} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '12px' }} />
+            <ClipboardList size={36} className="icon-inline" style={{ marginRight: '12px' }} />
             MOV Report Extraction & Review
           </h1>
           <p className="login-subtitle">Compliance Document Analysis System</p>

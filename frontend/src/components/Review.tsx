@@ -164,7 +164,7 @@ function Review() {
                             {q.key_finding && (
                               <div className="key-finding">
                                 <strong>
-                                  <AlertTriangle size={16} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '6px' }} />
+                                  <AlertTriangle size={16} className="icon-inline-sm" />
                                   Key Finding:
                                 </strong> {q.key_finding}
                               </div>
@@ -186,7 +186,7 @@ function Review() {
                     {selectedReport.key_concerns.length > 0 && (
                       <div className="concerns">
                         <h4>
-                          <AlertTriangle size={18} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '6px' }} />
+                          <AlertTriangle size={18} className="icon-inline-sm" />
                           Concerns:
                         </h4>
                         <ul>
@@ -200,7 +200,7 @@ function Review() {
                     {selectedReport.key_strengths.length > 0 && (
                       <div className="strengths">
                         <h4>
-                          <CheckCircle size={18} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '6px' }} />
+                          <CheckCircle size={18} className="icon-inline-sm" />
                           Strengths:
                         </h4>
                         <ul>

@@ -7,6 +7,7 @@ import json
 
 from ..models import MOVReport, AnswerType, SentimentType
 from ..database.base import DatabaseProvider
+from ..config import config
 
 
 class AnalyticsService:
@@ -32,7 +33,7 @@ class AnalyticsService:
         Returns:
             List of MOVReport objects
         """
-        all_reports_with_ids = self.db.list_reports(limit=10000)  # Get all reports (returns tuples of (id, report))
+        all_reports_with_ids = self.db.list_reports(limit=config.ANALYTICS_QUERY_LIMIT)  # Get all reports (returns tuples of (id, report))
 
         filtered = []
         for report_id, report in all_reports_with_ids:

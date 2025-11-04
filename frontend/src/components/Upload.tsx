@@ -48,7 +48,7 @@ function Upload() {
 
         {file && (
           <div className="file-info">
-            <FileText size={18} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '8px' }} />
+            <FileText size={18} className="icon-inline" />
             File: {file.name} ({(file.size / 1024).toFixed(1)} KB)
           </div>
         )}
@@ -61,12 +61,12 @@ function Upload() {
           >
             {uploading ? (
               <>
-                <Loader2 size={18} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '8px' }} className="spinner-icon" />
+                <Loader2 size={18} className="icon-inline spinner-icon" />
                 Extracting...
               </>
             ) : (
               <>
-                <UploadIcon size={18} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '8px' }} />
+                <UploadIcon size={18} className="icon-inline" />
                 Extract Data
               </>
             )}
@@ -83,7 +83,7 @@ function Upload() {
 
       {error && (
         <div className="error-message">
-          <XCircle size={18} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '8px' }} />
+          <XCircle size={18} className="icon-inline" />
           {error}
         </div>
       )}
@@ -91,7 +91,7 @@ function Upload() {
       {result && (
         <div className="success-message">
           <h3>
-            <CheckCircle size={24} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '8px' }} />
+            <CheckCircle size={24} className="icon-inline" />
             Extraction Complete!
           </h3>
           <div className="result-details">
