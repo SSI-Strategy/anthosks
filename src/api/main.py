@@ -42,27 +42,74 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize database (PostgreSQL required)
-if not config.DATABASE_URL:
-    raise RuntimeError("DATABASE_URL environment variable is required")
+# Database instances (lazy initialization)
+_db = None
+_analytics = None
 
-logger.info(f"Using PostgreSQL database")
-db = PostgreSQLDatabase(config.DATABASE_URL)
 
-# Initialize analytics service
-analytics = AnalyticsService(db)
+def get_db() -> PostgreSQLDatabase:
+    """Get database instance with lazy initialization."""
+    global _db
+    if _db is None:
+        if not config.DATABASE_URL:
+            raise RuntimeError("DATABASE_URL environment variable is required")
+        logger.info("Initializing PostgreSQL database connection...")
+        _db = PostgreSQLDatabase(config.DATABASE_URL)
+        logger.info("Database connection initialized")
+    return _db
+
+
+def get_analytics() -> AnalyticsService:
+    """Get analytics service instance with lazy initialization."""
+    global _analytics
+    if _analytics is None:
+        logger.info("Initializing analytics service...")
+        _analytics = AnalyticsService(get_db())
+        logger.info("Analytics service initialized")
+    return _analytics
 
 
 @app.get("/")
 async def root():
-    """Health check endpoint."""
-    return {"status": "ok", "message": "MOV Report Extraction API"}
+    """Health check endpoint (no database required)."""
+    return {"status": "ok", "message": "MOV Report Extraction API", "version": "1.0.0"}
 
 
 @app.get("/health")
 async def health():
-    """Health check endpoint for monitoring."""
-    return {"status": "ok", "message": "Healthy"}
+    """Health check endpoint for monitoring (no database required)."""
+    return {"status": "healthy", "service": "anthosks-api"}
+
+
+@app.get("/warmup")
+async def warmup():
+    """
+    Warmup endpoint to initialize database connections.
+    Call this to prepare the backend after cold start.
+    """
+    try:
+        # Initialize database connection
+        db = get_db()
+
+        # Test database connection by counting reports
+        reports = db.list_reports(limit=1)
+
+        # Initialize analytics service
+        analytics = get_analytics()
+
+        return {
+            "status": "warm",
+            "message": "Backend is ready",
+            "database": "connected",
+            "analytics": "initialized"
+        }
+    except Exception as e:
+        logger.error(f"Warmup failed: {e}", exc_info=True)
+        return {
+            "status": "warming",
+            "message": f"Warmup in progress: {str(e)}",
+            "database": "connecting"
+        }
 
 
 @app.post("/api/reports/upload")
@@ -97,7 +144,8 @@ async def upload_report(file: UploadFile = File(...), user: dict = Depends(get_c
         report = extractor.extract_report_chunked(document_text, file.filename)
         logger.info(f"Extracted report with {len(report.question_responses)} questions")
 
-        # Save to database
+        # Save to database (lazy init)
+        db = get_db()
         report_id = db.save_report(report)
         logger.info(f"Saved report with ID: {report_id}")
 
@@ -118,6 +166,7 @@ async def upload_report(file: UploadFile = File(...), user: dict = Depends(get_c
 async def list_reports(limit: int = 100, offset: int = 0, user: dict = Depends(get_current_user)):
     """List all reports with pagination."""
     try:
+        db = get_db()
         reports_with_ids = db.list_reports(limit=limit, offset=offset)
 
         # Convert to dict format for JSON response
@@ -147,6 +196,7 @@ async def list_reports(limit: int = 100, offset: int = 0, user: dict = Depends(g
 async def get_report(report_id: str, user: dict = Depends(get_current_user)):
     """Get a specific report by ID."""
     try:
+        db = get_db()
         report = db.get_report(report_id)
 
         if not report:
@@ -215,6 +265,7 @@ async def delete_report(report_id: str, user: dict = Depends(get_current_user)):
     """Delete a report."""
     logger.info(f"User {user.get('email')} deleting report {report_id}")
     try:
+        db = get_db()
         success = db.delete_report(report_id)
 
         if not success:
@@ -255,6 +306,7 @@ async def get_kpis(
         if site_number:
             filters['site_number'] = site_number
 
+        analytics = get_analytics()
         kpis = analytics.calculate_kpis(date_from=df, date_to=dt, filters=filters if filters else None)
         return kpis
 
@@ -283,6 +335,7 @@ async def get_compliance_trends(
         if protocol:
             filters['protocol_number'] = protocol
 
+        analytics = get_analytics()
         trends = analytics.get_compliance_trends(
             date_from=df,
             date_to=dt,
@@ -315,6 +368,7 @@ async def get_question_statistics(
         if protocol:
             filters['protocol_number'] = protocol
 
+        analytics = get_analytics()
         stats = analytics.get_question_statistics(
             date_from=df,
             date_to=dt,
@@ -345,6 +399,7 @@ async def get_site_leaderboard(
         if country:
             filters['country'] = country
 
+        analytics = get_analytics()
         leaderboard = analytics.get_site_leaderboard(
             date_from=df,
             date_to=dt,
@@ -375,6 +430,7 @@ async def get_geographic_summary(
         if protocol:
             filters['protocol_number'] = protocol
 
+        analytics = get_analytics()
         summary = analytics.get_geographic_summary(
             date_from=df,
             date_to=dt,

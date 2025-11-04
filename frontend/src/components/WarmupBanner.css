@@ -1,0 +1,108 @@
+.warmup-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  margin: 16px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.warmup-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.warmup-content strong {
+  font-weight: 600;
+}
+
+.warmup-content span {
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+.warmup-hint {
+  font-size: 12px !important;
+  opacity: 0.7 !important;
+  font-style: italic;
+}
+
+/* Warming state (yellow/amber) */
+.warmup-warming {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 1px solid #f59e0b;
+  color: #92400e;
+}
+
+.warmup-warming svg {
+  color: #f59e0b;
+}
+
+/* Success state (green) */
+.warmup-success {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  border: 1px solid #10b981;
+  color: #065f46;
+}
+
+.warmup-success svg {
+  color: #10b981;
+}
+
+/* Error state (red) */
+.warmup-error {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border: 1px solid #ef4444;
+  color: #991b1b;
+}
+
+.warmup-error svg {
+  color: #ef4444;
+}
+
+/* Spinner animation */
+.warmup-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .warmup-banner {
+    margin: 12px;
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+
+  .warmup-content span {
+    font-size: 12px;
+  }
+
+  .warmup-hint {
+    font-size: 11px !important;
+  }
+}

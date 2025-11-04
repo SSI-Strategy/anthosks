@@ -3,6 +3,7 @@ import type { Report, ReportDetail, UploadResponse } from '../types';
 import { getAccessToken } from './authService';
 
 const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api`;
+const API_ROOT_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -271,6 +272,55 @@ export const getGeographicSummary = async (params?: {
 }): Promise<GeographicSummary[]> => {
   const response = await api.get<{ countries: GeographicSummary[] }>('/analytics/geographic', { params });
   return response.data.countries;
+};
+
+// ===== WARMUP API =====
+
+export interface HealthStatus {
+  status: string;
+  service?: string;
+  message?: string;
+  version?: string;
+}
+
+export interface WarmupStatus {
+  status: 'warm' | 'warming' | 'cold';
+  message: string;
+  database?: string;
+  analytics?: string;
+}
+
+/**
+ * Check if backend is healthy (no database required)
+ */
+export const checkHealth = async (): Promise<HealthStatus> => {
+  const response = await axios.get<HealthStatus>(`${API_ROOT_URL}/health`, {
+    timeout: 5000 // 5 second timeout for health check
+  });
+  return response.data;
+};
+
+/**
+ * Warmup the backend (initialize database connections)
+ */
+export const warmupBackend = async (): Promise<WarmupStatus> => {
+  const response = await axios.get<WarmupStatus>(`${API_ROOT_URL}/warmup`, {
+    timeout: 30000 // 30 second timeout for warmup
+  });
+  return response.data;
+};
+
+/**
+ * Check if backend is warm and ready
+ */
+export const isBackendWarm = async (): Promise<boolean> => {
+  try {
+    const status = await warmupBackend();
+    return status.status === 'warm';
+  } catch (error) {
+    console.error('Warmup check failed:', error);
+    return false;
+  }
 };
 
 export default api;

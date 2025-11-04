@@ -38,14 +38,25 @@ class PostgreSQLDatabase(DatabaseProvider):
 
     def __init__(self, connection_url: str):
         """
-        Initialize PostgreSQL connection.
+        Initialize PostgreSQL connection with connection pooling.
 
         Args:
             connection_url: PostgreSQL connection string
                 Format: postgresql://user:password@host:port/database
                 Example: postgresql://postgres:password@localhost:5432/sandbox_db
         """
-        self.engine = create_engine(connection_url)
+        # Create engine with connection pooling
+        # pool_pre_ping ensures connections are alive before using them
+        # pool_size controls the number of persistent connections
+        # max_overflow allows additional connections when needed
+        self.engine = create_engine(
+            connection_url,
+            pool_pre_ping=True,  # Verify connections before using
+            pool_size=5,          # Keep 5 connections in pool
+            max_overflow=10,      # Allow up to 15 total connections
+            pool_recycle=3600,    # Recycle connections after 1 hour
+            echo=False            # Set to True for SQL debugging
+        )
 
         # Create schema if it doesn't exist
         with self.engine.connect() as conn:

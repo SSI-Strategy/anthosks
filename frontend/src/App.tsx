@@ -6,6 +6,7 @@ import Review from './components/Review';
 import Reports from './components/Reports';
 import Analytics from './components/Analytics';
 import { LoginButton } from './components/LoginButton';
+import { WarmupBanner } from './components/WarmupBanner';
 
 type Tab = 'upload' | 'review' | 'reports' | 'analytics';
 
@@ -18,6 +19,8 @@ function App() {
         <h1><ClipboardList size={32} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '12px' }} /> MOV Report Extraction & Review</h1>
         <LoginButton />
       </header>
+
+      <WarmupBanner />
 
       <nav className="tabs">
         <button
