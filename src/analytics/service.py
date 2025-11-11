@@ -489,6 +489,22 @@ class AnalyticsService:
 
         return round(composite, 2)
 
+    def get_unique_protocols(self) -> List[str]:
+        """
+        Get list of unique protocol numbers from all reports.
+
+        Returns:
+            List of unique protocol numbers sorted alphabetically
+        """
+        all_reports_with_ids = self.db.list_reports(limit=10000)
+        protocols = set()
+
+        for report_id, report in all_reports_with_ids:
+            if report.protocol_number:
+                protocols.add(report.protocol_number)
+
+        return sorted(list(protocols))
+
     def _get_period_key(self, date: datetime, granularity: str) -> str:
         """Get period key for grouping (e.g., '2025-Q1', '2025-03', '2025-W12')."""
         if granularity == "day":

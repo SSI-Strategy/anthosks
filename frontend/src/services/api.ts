@@ -273,4 +273,9 @@ export const getGeographicSummary = async (params?: {
   return response.data.countries;
 };
 
+export const getProtocols = async (): Promise<string[]> => {
+  const response = await api.get<{ protocols: string[] }>('/analytics/protocols');
+  return response.data.protocols;
+};
+
 export default api;

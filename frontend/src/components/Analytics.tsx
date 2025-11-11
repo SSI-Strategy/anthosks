@@ -4,6 +4,7 @@ import {
   getQuestionStatistics,
   getSiteLeaderboard,
   getGeographicSummary,
+  getProtocols,
   type KPIData,
   type QuestionStatistic,
   type SiteLeaderboardEntry,
@@ -23,14 +24,29 @@ function Analytics() {
   const [questions, setQuestions] = useState<QuestionStatistic[]>([]);
   const [sites, setSites] = useState<SiteLeaderboardEntry[]>([]);
   const [countries, setCountries] = useState<GeographicSummary[]>([]);
+  const [protocols, setProtocols] = useState<string[]>([]);
 
   // Filters
   const [dateRange, setDateRange] = useState<'all' | '30d' | '90d' | 'ytd'>('all');
   const [selectedCountry, setSelectedCountry] = useState<string>('');
+  const [selectedProtocol, setSelectedProtocol] = useState<string>('');
+
+  useEffect(() => {
+    loadProtocols();
+  }, []);
 
   useEffect(() => {
     loadAnalytics();
-  }, [dateRange, selectedCountry]);
+  }, [dateRange, selectedCountry, selectedProtocol]);
+
+  const loadProtocols = async () => {
+    try {
+      const protocolsList = await getProtocols();
+      setProtocols(protocolsList);
+    } catch (err) {
+      console.error('Failed to load protocols:', err);
+    }
+  };
 
   const loadAnalytics = async () => {
     setLoading(true);
@@ -57,6 +73,7 @@ function Analytics() {
         date_from,
         date_to,
         country: selectedCountry || undefined,
+        protocol: selectedProtocol || undefined,
       };
 
       // Load all analytics data in parallel
@@ -401,6 +418,15 @@ function Analytics() {
               <option value="30d">Last 30 Days</option>
               <option value="90d">Last 90 Days</option>
               <option value="ytd">Year to Date</option>
+            </select>
+          </div>
+          <div className="filter-group">
+            <label>Study:</label>
+            <select value={selectedProtocol} onChange={(e) => setSelectedProtocol(e.target.value)}>
+              <option value="">All Studies</option>
+              {protocols.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
             </select>
           </div>
           <div className="filter-group">

@@ -387,6 +387,18 @@ async def get_geographic_summary(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/api/analytics/protocols")
+async def get_protocols(user: dict = Depends(get_current_user)):
+    """Get list of unique protocol numbers."""
+    try:
+        protocols = analytics.get_unique_protocols()
+        return {"protocols": protocols}
+
+    except Exception as e:
+        logger.error(f"Get protocols failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
