@@ -48,15 +48,40 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize database (PostgreSQL required)
-if not config.DATABASE_URL:
-    raise RuntimeError("DATABASE_URL environment variable is required")
+db: Optional[PostgreSQLDatabase] = None
+analytics: Optional[AnalyticsService] = None
 
-logger.info(f"Using PostgreSQL database")
-db = PostgreSQLDatabase(config.DATABASE_URL)
 
-# Initialize analytics service
-analytics = AnalyticsService(db)
+def get_database() -> PostgreSQLDatabase:
+    """Initialize PostgreSQL lazily so health checks are not blocked by DB startup."""
+    global db, analytics
+
+    if db is not None:
+        return db
+
+    if not config.DATABASE_URL:
+        raise HTTPException(status_code=503, detail="Database is not configured")
+
+    try:
+        logger.info("Initializing PostgreSQL database")
+        db = PostgreSQLDatabase(config.DATABASE_URL)
+        analytics = AnalyticsService(db)
+        return db
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("Database initialization failed: %s", exc, exc_info=True)
+        raise HTTPException(status_code=503, detail="Database is unavailable")
+
+
+def get_analytics_service() -> AnalyticsService:
+    global analytics
+
+    if analytics is None:
+        get_database()
+    if analytics is None:
+        raise HTTPException(status_code=503, detail="Analytics service is unavailable")
+    return analytics
 
 
 @app.get("/")
@@ -77,6 +102,7 @@ async def upload_report(file: UploadFile = File(...), user: dict = Depends(get_c
     logger.info(f"Received file: {file.filename} from user: {user.get('email')}")
 
     file_ext = validate_upload_filename(file.filename)
+    database = get_database()
 
     try:
         # Save uploaded file
@@ -104,7 +130,7 @@ async def upload_report(file: UploadFile = File(...), user: dict = Depends(get_c
         logger.info(f"Extracted report with {len(report.question_responses)} questions")
 
         # Save to database
-        report_id = db.save_report(
+        report_id = database.save_report(
             report,
             owner_user_id=user_owner_id(user),
             owner_email=user_email(user),
@@ -129,9 +155,10 @@ async def upload_report(file: UploadFile = File(...), user: dict = Depends(get_c
 @app.get("/api/reports")
 async def list_reports(limit: int = 100, offset: int = 0, user: dict = Depends(get_current_user)):
     """List all reports with pagination."""
+    database = get_database()
     try:
         owner_scope = None if is_admin_user(user) else user_owner_id(user)
-        reports_with_ids = db.list_reports(limit=limit, offset=offset, owner_user_id=owner_scope)
+        reports_with_ids = database.list_reports(limit=limit, offset=offset, owner_user_id=owner_scope)
 
         # Convert to dict format for JSON response
         reports_data = []
@@ -159,9 +186,10 @@ async def list_reports(limit: int = 100, offset: int = 0, user: dict = Depends(g
 @app.get("/api/reports/{report_id}")
 async def get_report(report_id: str, user: dict = Depends(get_current_user)):
     """Get a specific report by ID."""
+    database = get_database()
     try:
         owner_scope = None if is_admin_user(user) else user_owner_id(user)
-        report = db.get_report(report_id, owner_user_id=owner_scope)
+        report = database.get_report(report_id, owner_user_id=owner_scope)
 
         if not report:
             raise HTTPException(status_code=404, detail="Report not found")
@@ -233,9 +261,10 @@ def _require_admin(user: dict) -> None:
 async def delete_report(report_id: str, user: dict = Depends(get_current_user)):
     """Delete a report."""
     _require_admin(user)
+    database = get_database()
     logger.info(f"User {user.get('email')} deleting report {report_id}")
     try:
-        success = db.delete_report(report_id)
+        success = database.delete_report(report_id)
 
         if not success:
             raise HTTPException(status_code=404, detail="Report not found")
@@ -262,6 +291,7 @@ async def get_kpis(
 ):
     """Get KPI metrics for dashboard."""
     _require_admin(user)
+    analytics_service = get_analytics_service()
     try:
         # Parse dates
         df = datetime.fromisoformat(date_from) if date_from else None
@@ -276,7 +306,7 @@ async def get_kpis(
         if site_number:
             filters['site_number'] = site_number
 
-        kpis = analytics.calculate_kpis(date_from=df, date_to=dt, filters=filters if filters else None)
+        kpis = analytics_service.calculate_kpis(date_from=df, date_to=dt, filters=filters if filters else None)
         return kpis
 
     except Exception as e:
@@ -295,6 +325,7 @@ async def get_compliance_trends(
 ):
     """Get compliance rate trends over time."""
     _require_admin(user)
+    analytics_service = get_analytics_service()
     try:
         df = datetime.fromisoformat(date_from)
         dt = datetime.fromisoformat(date_to)
@@ -305,7 +336,7 @@ async def get_compliance_trends(
         if protocol:
             filters['protocol_number'] = protocol
 
-        trends = analytics.get_compliance_trends(
+        trends = analytics_service.get_compliance_trends(
             date_from=df,
             date_to=dt,
             granularity=granularity,
@@ -328,6 +359,7 @@ async def get_question_statistics(
 ):
     """Get compliance statistics for all 85 questions."""
     _require_admin(user)
+    analytics_service = get_analytics_service()
     try:
         df = datetime.fromisoformat(date_from) if date_from else None
         dt = datetime.fromisoformat(date_to) if date_to else None
@@ -338,7 +370,7 @@ async def get_question_statistics(
         if protocol:
             filters['protocol_number'] = protocol
 
-        stats = analytics.get_question_statistics(
+        stats = analytics_service.get_question_statistics(
             date_from=df,
             date_to=dt,
             filters=filters if filters else None
@@ -361,6 +393,7 @@ async def get_site_leaderboard(
 ):
     """Get site performance leaderboard."""
     _require_admin(user)
+    analytics_service = get_analytics_service()
     try:
         df = datetime.fromisoformat(date_from) if date_from else None
         dt = datetime.fromisoformat(date_to) if date_to else None
@@ -369,7 +402,7 @@ async def get_site_leaderboard(
         if country:
             filters['country'] = country
 
-        leaderboard = analytics.get_site_leaderboard(
+        leaderboard = analytics_service.get_site_leaderboard(
             date_from=df,
             date_to=dt,
             filters=filters if filters else None,
@@ -392,6 +425,7 @@ async def get_geographic_summary(
 ):
     """Get compliance and performance metrics by country."""
     _require_admin(user)
+    analytics_service = get_analytics_service()
     try:
         df = datetime.fromisoformat(date_from) if date_from else None
         dt = datetime.fromisoformat(date_to) if date_to else None
@@ -400,7 +434,7 @@ async def get_geographic_summary(
         if protocol:
             filters['protocol_number'] = protocol
 
-        summary = analytics.get_geographic_summary(
+        summary = analytics_service.get_geographic_summary(
             date_from=df,
             date_to=dt,
             filters=filters if filters else None
@@ -416,8 +450,9 @@ async def get_geographic_summary(
 async def get_protocols(user: dict = Depends(get_current_user)):
     """Get list of unique protocol numbers."""
     _require_admin(user)
+    analytics_service = get_analytics_service()
     try:
-        protocols = analytics.get_unique_protocols()
+        protocols = analytics_service.get_unique_protocols()
         return {"protocols": protocols}
 
     except Exception as e:

@@ -38,6 +38,9 @@ class Config(BaseSettings):
         default=None,
         description="PostgreSQL connection string (postgresql://user:password@host:port/database)"
     )
+    DATABASE_CONNECT_TIMEOUT_SECONDS: int = Field(default=5, ge=1)
+    DATABASE_LOCK_TIMEOUT_MS: int = Field(default=5000, ge=1)
+    DATABASE_STATEMENT_TIMEOUT_MS: int = Field(default=10000, ge=1)
 
     # Application Settings
     ENVIRONMENT: str = Field(default="production", description="Runtime environment name")

@@ -8,6 +8,7 @@ from datetime import datetime
 
 from .base import DatabaseProvider
 from ..models import MOVReport
+from ..config import config
 
 Base = declarative_base()
 
@@ -47,7 +48,17 @@ class PostgreSQLDatabase(DatabaseProvider):
                 Format: postgresql://user:password@host:port/database
                 Example: postgresql://postgres:password@localhost:5432/sandbox_db
         """
-        self.engine = create_engine(connection_url)
+        self.engine = create_engine(
+            connection_url,
+            connect_args={
+                "connect_timeout": config.DATABASE_CONNECT_TIMEOUT_SECONDS,
+                "options": (
+                    f"-c lock_timeout={config.DATABASE_LOCK_TIMEOUT_MS} "
+                    f"-c statement_timeout={config.DATABASE_STATEMENT_TIMEOUT_MS}"
+                ),
+            },
+            pool_pre_ping=True,
+        )
 
         # Create schema if it doesn't exist
         with self.engine.connect() as conn:
