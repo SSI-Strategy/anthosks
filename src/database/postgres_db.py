@@ -26,6 +26,8 @@ class ReportRecord(Base):
     extraction_timestamp = Column(DateTime)
     json_data = Column(Text)  # Full report as JSON
     source_file = Column(String)
+    owner_user_id = Column(String, index=True, nullable=True)
+    owner_email = Column(String, index=True, nullable=True)
 
     # Data quality metrics
     completeness_score = Column(Float, index=True)
@@ -54,9 +56,24 @@ class PostgreSQLDatabase(DatabaseProvider):
 
         # Create tables in anthosks schema
         Base.metadata.create_all(self.engine)
+        self._ensure_columns()
         self.Session = sessionmaker(bind=self.engine)
 
-    def save_report(self, report: MOVReport) -> str:
+    def _ensure_columns(self) -> None:
+        """Add security columns for existing deployments without a migration runner."""
+        with self.engine.connect() as conn:
+            conn.execute(text("ALTER TABLE anthosks.mov_reports ADD COLUMN IF NOT EXISTS owner_user_id VARCHAR"))
+            conn.execute(text("ALTER TABLE anthosks.mov_reports ADD COLUMN IF NOT EXISTS owner_email VARCHAR"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_mov_reports_owner_user_id ON anthosks.mov_reports (owner_user_id)"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_mov_reports_owner_email ON anthosks.mov_reports (owner_email)"))
+            conn.commit()
+
+    def save_report(
+        self,
+        report: MOVReport,
+        owner_user_id: Optional[str] = None,
+        owner_email: Optional[str] = None,
+    ) -> str:
         """Save report to PostgreSQL."""
         session = self.Session()
         try:
@@ -77,6 +94,8 @@ class PostgreSQLDatabase(DatabaseProvider):
                 extraction_timestamp=report.extraction_timestamp,
                 json_data=report.model_dump_json(),
                 source_file=report.source_file,
+                owner_user_id=owner_user_id,
+                owner_email=owner_email,
                 completeness_score=report.data_quality.completeness_score,
                 requires_review=report.data_quality.requires_review,
                 review_reason=report.data_quality.review_reason
@@ -88,11 +107,14 @@ class PostgreSQLDatabase(DatabaseProvider):
         finally:
             session.close()
 
-    def get_report(self, report_id: str) -> Optional[MOVReport]:
+    def get_report(self, report_id: str, owner_user_id: Optional[str] = None) -> Optional[MOVReport]:
         """Retrieve report by ID."""
         session = self.Session()
         try:
-            record = session.query(ReportRecord).filter_by(id=report_id).first()
+            query = session.query(ReportRecord).filter_by(id=report_id)
+            if owner_user_id is not None:
+                query = query.filter_by(owner_user_id=owner_user_id)
+            record = query.first()
             if record:
                 return MOVReport.model_validate_json(record.json_data)
             return None
@@ -103,12 +125,15 @@ class PostgreSQLDatabase(DatabaseProvider):
         self,
         limit: int = 100,
         offset: int = 0,
-        filter_dict: Optional[dict] = None
+        filter_dict: Optional[dict] = None,
+        owner_user_id: Optional[str] = None,
     ) -> List[tuple[str, MOVReport]]:
         """List reports with pagination. Returns list of (id, report) tuples."""
         session = self.Session()
         try:
             query = session.query(ReportRecord)
+            if owner_user_id is not None:
+                query = query.filter_by(owner_user_id=owner_user_id)
 
             if filter_dict:
                 if 'protocol_number' in filter_dict:
@@ -123,11 +148,14 @@ class PostgreSQLDatabase(DatabaseProvider):
         finally:
             session.close()
 
-    def delete_report(self, report_id: str) -> bool:
+    def delete_report(self, report_id: str, owner_user_id: Optional[str] = None) -> bool:
         """Delete report."""
         session = self.Session()
         try:
-            record = session.query(ReportRecord).filter_by(id=report_id).first()
+            query = session.query(ReportRecord).filter_by(id=report_id)
+            if owner_user_id is not None:
+                query = query.filter_by(owner_user_id=owner_user_id)
+            record = query.first()
             if record:
                 session.delete(record)
                 session.commit()

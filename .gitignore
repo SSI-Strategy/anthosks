@@ -37,10 +37,13 @@ data/
 # Logs
 *.log
 logs/
+LogFiles/
+backend-logs2/
 
 # Deployment artifacts
 *.zip
 !.github/**/*.zip
+deployments/
 
 # Jupyter
 .ipynb_checkpoints/

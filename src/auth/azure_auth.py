@@ -17,24 +17,38 @@ logger = logging.getLogger(__name__)
 security = HTTPBearer(auto_error=False)
 
 
+def _split_csv(raw: Optional[str]) -> set[str]:
+    return {item.strip() for item in (raw or "").split(",") if item.strip()}
+
+
+def _dev_auth_allowed() -> bool:
+    environment = config.ENVIRONMENT.strip().lower()
+    return config.DEV_AUTH_ENABLED and environment in {"local", "dev", "development", "test"}
+
+
 class AzureADAuth:
     """Azure AD authentication handler."""
 
     def __init__(self):
         """Initialize Azure AD authentication."""
         self.enabled = config.AZURE_AD_ENABLED
+        self.dev_auth_enabled = False
 
         if not self.enabled:
-            logger.info("Azure AD authentication is DISABLED")
+            self.dev_auth_enabled = _dev_auth_allowed()
+            if not self.dev_auth_enabled:
+                raise RuntimeError(
+                    "Azure AD authentication is disabled. Set DEV_AUTH_ENABLED=true "
+                    "only in a local/dev/test environment to use mock development users."
+                )
+            logger.warning("Azure AD authentication is DISABLED for local development")
             return
 
         if not all([config.AZURE_AD_TENANT_ID, config.AZURE_AD_CLIENT_ID, config.AZURE_AD_AUDIENCE]):
-            logger.warning(
-                "Azure AD is enabled but configuration is incomplete. "
-                "Please set AZURE_AD_TENANT_ID, AZURE_AD_CLIENT_ID, and AZURE_AD_AUDIENCE"
+            raise RuntimeError(
+                "Azure AD authentication is enabled but configuration is incomplete. "
+                "Set AZURE_AD_TENANT_ID, AZURE_AD_CLIENT_ID, and AZURE_AD_AUDIENCE."
             )
-            self.enabled = False
-            return
 
         self.tenant_id = config.AZURE_AD_TENANT_ID
         self.client_id = config.AZURE_AD_CLIENT_ID
@@ -116,12 +130,17 @@ class AzureADAuth:
         """
         if not self.enabled:
             # If auth is disabled, return a mock user for development
+            if not self.dev_auth_enabled:
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail="Authentication is not configured",
+                )
             return {
                 "oid": "dev-user-id",
                 "preferred_username": "dev@localhost",
                 "name": "Development User",
                 "email": "dev@localhost",
-                "roles": [],
+                "roles": ["Admin"],
                 "groups": []
             }
 
@@ -260,12 +279,17 @@ async def get_current_user(
     """
     if not azure_ad_auth.enabled:
         # Development mode - return mock user
+        if not azure_ad_auth.dev_auth_enabled:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Authentication is not configured",
+            )
         return {
             "oid": "dev-user-id",
             "preferred_username": "dev@localhost",
             "name": "Development User",
             "email": "dev@localhost",
-            "roles": [],
+            "roles": ["Admin"],
             "groups": []
         }
 
@@ -288,6 +312,15 @@ async def get_current_user(
         )
 
     return user
+
+
+def is_admin_user(user: Dict[str, Any]) -> bool:
+    """Return True when the authenticated user has configured admin role/group access."""
+    roles = {role.lower() for role in user.get("roles", [])}
+    groups = set(user.get("groups", []))
+    admin_roles = {role.lower() for role in _split_csv(config.ANTHOSKS_ADMIN_ROLES)}
+    admin_groups = _split_csv(config.ANTHOSKS_ADMIN_GROUPS)
+    return bool((roles & admin_roles) or (groups & admin_groups))
 
 
 async def get_optional_user(

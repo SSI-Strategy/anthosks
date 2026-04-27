@@ -11,7 +11,7 @@ class Config(BaseSettings):
 
     # Azure OpenAI
     AZURE_OPENAI_ENDPOINT: str = Field(
-        ...,
+        default="https://swedencentral.api.cognitive.microsoft.com/",
         description="Azure OpenAI endpoint URL"
     )
     AZURE_OPENAI_DEPLOYMENT: str = Field(
@@ -40,10 +40,12 @@ class Config(BaseSettings):
     )
 
     # Application Settings
+    ENVIRONMENT: str = Field(default="production", description="Runtime environment name")
     LOG_LEVEL: str = Field(default="INFO")
     ENABLE_CACHE: bool = Field(default=True)
     MAX_RETRIES: int = Field(default=3)
     TIMEOUT_SECONDS: int = Field(default=120)
+    MAX_UPLOAD_BYTES: int = Field(default=25 * 1024 * 1024, ge=1)
 
     # Extraction Parameters
     LLM_TEMPERATURE: float = Field(default=0.0, ge=0.0, le=2.0)
@@ -58,6 +60,18 @@ class Config(BaseSettings):
     AZURE_AD_ALLOWED_GROUPS: Optional[str] = Field(
         default=None,
         description="Comma-separated list of Azure AD group object IDs for authorization"
+    )
+    DEV_AUTH_ENABLED: bool = Field(
+        default=False,
+        description="Allow local development mock users only when ENVIRONMENT is local/dev/test"
+    )
+    ANTHOSKS_ADMIN_ROLES: str = Field(
+        default="Admin,Contributor,AnthosKS.Admin",
+        description="Comma-separated app roles allowed to perform admin operations"
+    )
+    ANTHOSKS_ADMIN_GROUPS: Optional[str] = Field(
+        default=None,
+        description="Comma-separated Azure AD group object IDs allowed to perform admin operations"
     )
 
     # CORS Configuration

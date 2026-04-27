@@ -19,7 +19,13 @@ from src.extraction.docx_parser import DOCXParser
 from src.extraction.chunked_extractor import ChunkedExtractor
 from src.models import MOVReport
 from src.analytics.service import AnalyticsService
-from src.auth import get_current_user, get_optional_user
+from src.auth import get_current_user, get_optional_user, is_admin_user
+from src.api.security import (
+    contained_upload_path,
+    user_email,
+    user_owner_id,
+    validate_upload_filename,
+)
 
 # Configure logging
 logging.basicConfig(level=config.LOG_LEVEL)
@@ -70,15 +76,15 @@ async def upload_report(file: UploadFile = File(...), user: dict = Depends(get_c
     """Upload and process a PDF or DOCX report."""
     logger.info(f"Received file: {file.filename} from user: {user.get('email')}")
 
-    # Validate file type
-    file_ext = Path(file.filename).suffix.lower()
-    if file_ext not in ['.pdf', '.docx']:
-        raise HTTPException(status_code=400, detail="Only PDF and DOCX files are accepted")
+    file_ext = validate_upload_filename(file.filename)
 
     try:
         # Save uploaded file
-        temp_path = Path(config.INPUT_PATH) / file.filename
         content = await file.read()
+        if len(content) > config.MAX_UPLOAD_BYTES:
+            raise HTTPException(status_code=413, detail="Uploaded file exceeds configured size limit")
+
+        temp_path = contained_upload_path(config.INPUT_PATH, file_ext)
         temp_path.write_bytes(content)
         logger.info(f"Saved file to: {temp_path}")
 
@@ -98,7 +104,11 @@ async def upload_report(file: UploadFile = File(...), user: dict = Depends(get_c
         logger.info(f"Extracted report with {len(report.question_responses)} questions")
 
         # Save to database
-        report_id = db.save_report(report)
+        report_id = db.save_report(
+            report,
+            owner_user_id=user_owner_id(user),
+            owner_email=user_email(user),
+        )
         logger.info(f"Saved report with ID: {report_id}")
 
         return {
@@ -109,6 +119,8 @@ async def upload_report(file: UploadFile = File(...), user: dict = Depends(get_c
             "quality": report.overall_site_quality
         }
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Upload failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
@@ -118,7 +130,8 @@ async def upload_report(file: UploadFile = File(...), user: dict = Depends(get_c
 async def list_reports(limit: int = 100, offset: int = 0, user: dict = Depends(get_current_user)):
     """List all reports with pagination."""
     try:
-        reports_with_ids = db.list_reports(limit=limit, offset=offset)
+        owner_scope = None if is_admin_user(user) else user_owner_id(user)
+        reports_with_ids = db.list_reports(limit=limit, offset=offset, owner_user_id=owner_scope)
 
         # Convert to dict format for JSON response
         reports_data = []
@@ -147,7 +160,8 @@ async def list_reports(limit: int = 100, offset: int = 0, user: dict = Depends(g
 async def get_report(report_id: str, user: dict = Depends(get_current_user)):
     """Get a specific report by ID."""
     try:
-        report = db.get_report(report_id)
+        owner_scope = None if is_admin_user(user) else user_owner_id(user)
+        report = db.get_report(report_id, owner_user_id=owner_scope)
 
         if not report:
             raise HTTPException(status_code=404, detail="Report not found")
@@ -210,9 +224,15 @@ async def get_report(report_id: str, user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+def _require_admin(user: dict) -> None:
+    if not is_admin_user(user):
+        raise HTTPException(status_code=403, detail="Admin authorization required")
+
+
 @app.delete("/api/reports/{report_id}")
 async def delete_report(report_id: str, user: dict = Depends(get_current_user)):
     """Delete a report."""
+    _require_admin(user)
     logger.info(f"User {user.get('email')} deleting report {report_id}")
     try:
         success = db.delete_report(report_id)
@@ -241,6 +261,7 @@ async def get_kpis(
     user: dict = Depends(get_current_user)
 ):
     """Get KPI metrics for dashboard."""
+    _require_admin(user)
     try:
         # Parse dates
         df = datetime.fromisoformat(date_from) if date_from else None
@@ -273,6 +294,7 @@ async def get_compliance_trends(
     user: dict = Depends(get_current_user)
 ):
     """Get compliance rate trends over time."""
+    _require_admin(user)
     try:
         df = datetime.fromisoformat(date_from)
         dt = datetime.fromisoformat(date_to)
@@ -305,6 +327,7 @@ async def get_question_statistics(
     user: dict = Depends(get_current_user)
 ):
     """Get compliance statistics for all 85 questions."""
+    _require_admin(user)
     try:
         df = datetime.fromisoformat(date_from) if date_from else None
         dt = datetime.fromisoformat(date_to) if date_to else None
@@ -337,6 +360,7 @@ async def get_site_leaderboard(
     user: dict = Depends(get_current_user)
 ):
     """Get site performance leaderboard."""
+    _require_admin(user)
     try:
         df = datetime.fromisoformat(date_from) if date_from else None
         dt = datetime.fromisoformat(date_to) if date_to else None
@@ -367,6 +391,7 @@ async def get_geographic_summary(
     user: dict = Depends(get_current_user)
 ):
     """Get compliance and performance metrics by country."""
+    _require_admin(user)
     try:
         df = datetime.fromisoformat(date_from) if date_from else None
         dt = datetime.fromisoformat(date_to) if date_to else None
@@ -390,6 +415,7 @@ async def get_geographic_summary(
 @app.get("/api/analytics/protocols")
 async def get_protocols(user: dict = Depends(get_current_user)):
     """Get list of unique protocol numbers."""
+    _require_admin(user)
     try:
         protocols = analytics.get_unique_protocols()
         return {"protocols": protocols}
